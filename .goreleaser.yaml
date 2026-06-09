@@ -19,7 +19,7 @@ builds:
       - -s -w
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
 
 checksum:
   name_template: "checksums.txt"
@@ -44,4 +44,4 @@ brews:
     install: |
       bin.install "ctxlog"
     test: |
-      assert_match "usage:", shell_output("#{bin}/ctxlog 2>&1", 1)
+      assert_match "Usage:", shell_output("#{bin}/ctxlog 2>&1", 1)
