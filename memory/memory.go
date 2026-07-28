@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -34,8 +35,12 @@ func (s *Store) Init() error {
 	return os.MkdirAll(s.basePath, 0o755)
 }
 
-func (s *Store) shardPath(shard string) string {
-	return filepath.Join(s.basePath, shard+".jsonl")
+func (s *Store) shardPath(shard string) (string, error) {
+	path := filepath.Join(s.basePath, shard+".jsonl")
+	if !strings.HasPrefix(path, s.basePath+string(filepath.Separator)) {
+		return "", fmt.Errorf("invalid shard name %q: escapes storage directory", shard)
+	}
+	return path, nil
 }
 
 // Append writes a single Entry to the named shard.
@@ -44,7 +49,10 @@ func (s *Store) Append(shard string, e Entry) error {
 		e.Ts = time.Now().Unix()
 	}
 
-	path := s.shardPath(shard)
+	path, err := s.shardPath(shard)
+	if err != nil {
+		return err
+	}
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("mkdir shard dir: %w", err)
@@ -76,7 +84,10 @@ func (s *Store) Append(shard string, e Entry) error {
 // ReadAll returns all entries from the named shard.
 // Returns an empty slice if the shard does not exist.
 func (s *Store) ReadAll(shard string) ([]Entry, error) {
-	path := s.shardPath(shard)
+	path, err := s.shardPath(shard)
+	if err != nil {
+		return nil, err
+	}
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -125,7 +136,10 @@ func (s *Store) ReadRecent(shard string, maxLines int) ([]Entry, error) {
 
 // Delete removes the entry at the given 1-based line index from the shard.
 func (s *Store) Delete(shard string, lineIndex int) error {
-	path := s.shardPath(shard)
+	path, err := s.shardPath(shard)
+	if err != nil {
+		return err
+	}
 
 	f, err := os.OpenFile(path, os.O_RDWR, 0o644)
 	if err != nil {
@@ -154,7 +168,10 @@ func (s *Store) Delete(shard string, lineIndex int) error {
 
 // Update replaces the msg (and refreshes ts) of the entry at the given 1-based line index.
 func (s *Store) Update(shard string, lineIndex int, newMsg string) error {
-	path := s.shardPath(shard)
+	path, err := s.shardPath(shard)
+	if err != nil {
+		return err
+	}
 
 	f, err := os.OpenFile(path, os.O_RDWR, 0o644)
 	if err != nil {
@@ -195,7 +212,10 @@ func (s *Store) Update(shard string, lineIndex int, newMsg string) error {
 
 // Clear removes the entire shard file.
 func (s *Store) Clear(shard string) error {
-	path := s.shardPath(shard)
+	path, err := s.shardPath(shard)
+	if err != nil {
+		return err
+	}
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("remove shard: %w", err)
 	}
