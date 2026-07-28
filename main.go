@@ -27,6 +27,7 @@ Usage:
 Commands:
   append    Append a new entry to a shard
   read      Read recent entries from a shard
+  search    Search entries in a shard by substring
   update    Update an existing entry by line number
   delete    Delete an entry by line number
   clear     Remove an entire shard file
@@ -39,6 +40,7 @@ Flags by command:
 
   append  -shard=<name>  -msg=<text>  [-agent=<id>]  [-global]
   read    -shard=<name>  [-lines=10]  [-global]
+  search  -shard=<name>  -term=<text>  [-global]
   update  -shard=<name>  -line=<num>  -msg=<new_text>  [-global]
   delete  -shard=<name>  -line=<num>  [-global]
   clear   -shard=<name>  [-global]
@@ -46,6 +48,7 @@ Flags by command:
 Examples:
   ctxlog append -shard="auth-refactor" -msg="switched to JWT middleware" -agent="claude"
   ctxlog read   -shard="auth-refactor" -lines=5
+  ctxlog search -shard="auth-refactor" -term="jwt"
   ctxlog append -global -shard="notes" -msg="global note across projects"
   ctxlog read   -global -shard="notes"
   ctxlog update -shard="auth-refactor" -line=2 -msg="JWT middleware validated in staging"
@@ -69,6 +72,8 @@ func main() {
 		cmdAppend(os.Args[2:])
 	case "read":
 		cmdRead(os.Args[2:])
+	case "search":
+		cmdSearch(os.Args[2:])
 	case "update":
 		cmdUpdate(os.Args[2:])
 	case "delete":
@@ -110,14 +115,42 @@ func cmdRead(args []string) {
 
 	store := getStore(*global)
 
-	entries, err := store.ReadRecent(*shard, *lines)
+	matches, err := store.ReadRecent(*shard, *lines)
 	if err != nil {
 		fatalf("read: %v", err)
 	}
 
-	for i, e := range entries {
-		data, _ := json.Marshal(e)
-		fmt.Printf("%d: %s\n", i+1, data)
+	printMatches(matches)
+}
+
+func cmdSearch(args []string) {
+	fs := flag.NewFlagSet("search", flag.ExitOnError)
+	shard := fs.String("shard", "", "shard name (required)")
+	term := fs.String("term", "", "text to search for (required)")
+	global := fs.Bool("global", false, "use ~/.ctxlog/")
+	fs.Parse(args)
+
+	if *shard == "" {
+		fatalf("search: -shard is required")
+	}
+	if *term == "" {
+		fatalf("search: -term is required")
+	}
+
+	store := getStore(*global)
+
+	matches, err := store.Search(*shard, *term)
+	if err != nil {
+		fatalf("search: %v", err)
+	}
+
+	printMatches(matches)
+}
+
+func printMatches(matches []memory.Match) {
+	for _, m := range matches {
+		data, _ := json.Marshal(m.Entry)
+		fmt.Printf("%d: %s\n", m.Line, data)
 	}
 }
 
