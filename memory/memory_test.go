@@ -53,15 +53,69 @@ func TestReadRecent(t *testing.T) {
 		s.Append("s1", Entry{Msg: string(rune('a' + i))})
 	}
 
-	entries, err := s.ReadRecent("s1", 3)
+	matches, err := s.ReadRecent("s1", 3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 3 {
-		t.Fatalf("got %d entries, want 3", len(entries))
+	if len(matches) != 3 {
+		t.Fatalf("got %d entries, want 3", len(matches))
 	}
-	if entries[0].Msg != "c" {
-		t.Fatalf("got %q, want 'c'", entries[0].Msg)
+	if matches[0].Entry.Msg != "c" {
+		t.Fatalf("got %q, want 'c'", matches[0].Entry.Msg)
+	}
+	if matches[0].Line != 3 || matches[2].Line != 5 {
+		t.Fatalf("got lines %d..%d, want 3..5", matches[0].Line, matches[2].Line)
+	}
+}
+
+func TestSearch(t *testing.T) {
+	s := testStore(t)
+	s.Append("s1", Entry{Msg: "fixed JWT middleware"})
+	s.Append("s1", Entry{Msg: "updated docs"})
+	s.Append("s1", Entry{Msg: "jwt validated in staging"})
+
+	matches, err := s.Search("s1", "JWT")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 2 {
+		t.Fatalf("got %d matches, want 2", len(matches))
+	}
+	if matches[0].Line != 1 || matches[1].Line != 3 {
+		t.Fatalf("got lines %d,%d, want 1,3", matches[0].Line, matches[1].Line)
+	}
+}
+
+func TestSearchNonexistentShard(t *testing.T) {
+	s := testStore(t)
+	matches, err := s.Search("nope", "x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 0 {
+		t.Fatalf("got %d matches, want 0", len(matches))
+	}
+}
+
+func TestSearchLineUsableByDelete(t *testing.T) {
+	s := testStore(t)
+	s.Append("s1", Entry{Msg: "keep one"})
+	s.Append("s1", Entry{Msg: "drop me"})
+	s.Append("s1", Entry{Msg: "keep two"})
+
+	matches, err := s.Search("s1", "drop")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("got %d matches, want 1", len(matches))
+	}
+	if err := s.Delete("s1", matches[0].Line); err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := s.ReadAll("s1")
+	if len(entries) != 2 || entries[0].Msg != "keep one" || entries[1].Msg != "keep two" {
+		t.Fatalf("unexpected entries after delete: %v", entries)
 	}
 }
 
