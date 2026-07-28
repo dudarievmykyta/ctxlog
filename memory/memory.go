@@ -81,9 +81,16 @@ func (s *Store) Append(shard string, e Entry) error {
 	return nil
 }
 
-// ReadAll returns all entries from the named shard.
+// Match is an Entry paired with its 1-based line number in the shard file.
+// Line numbers count every non-empty line, matching Update and Delete indexing.
+type Match struct {
+	Line  int
+	Entry Entry
+}
+
+// readMatches returns all parseable entries with their line numbers.
 // Returns an empty slice if the shard does not exist.
-func (s *Store) ReadAll(shard string) ([]Entry, error) {
+func (s *Store) readMatches(shard string) ([]Match, error) {
 	path, err := s.shardPath(shard)
 	if err != nil {
 		return nil, err
@@ -92,7 +99,7 @@ func (s *Store) ReadAll(shard string) ([]Entry, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []Entry{}, nil
+			return []Match{}, nil
 		}
 		return nil, fmt.Errorf("open shard: %w", err)
 	}
@@ -103,28 +110,45 @@ func (s *Store) ReadAll(shard string) ([]Entry, error) {
 	}
 	defer syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
 
-	var entries []Entry
+	var matches []Match
+	line := 0
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := scanner.Bytes()
-		if len(line) == 0 {
+		b := scanner.Bytes()
+		if len(b) == 0 {
 			continue
 		}
+		line++
 		var e Entry
-		if err := json.Unmarshal(line, &e); err != nil {
+		if err := json.Unmarshal(b, &e); err != nil {
 			continue
 		}
-		entries = append(entries, e)
+		matches = append(matches, Match{Line: line, Entry: e})
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("scan: %w", err)
 	}
+	return matches, nil
+}
+
+// ReadAll returns all entries from the named shard.
+// Returns an empty slice if the shard does not exist.
+func (s *Store) ReadAll(shard string) ([]Entry, error) {
+	matches, err := s.readMatches(shard)
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]Entry, len(matches))
+	for i, m := range matches {
+		entries[i] = m.Entry
+	}
 	return entries, nil
 }
 
-// ReadRecent returns the last maxLines entries from the named shard.
-func (s *Store) ReadRecent(shard string, maxLines int) ([]Entry, error) {
-	all, err := s.ReadAll(shard)
+// ReadRecent returns the last maxLines entries from the named shard,
+// each with its line number in the shard file.
+func (s *Store) ReadRecent(shard string, maxLines int) ([]Match, error) {
+	all, err := s.readMatches(shard)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +156,23 @@ func (s *Store) ReadRecent(shard string, maxLines int) ([]Entry, error) {
 		return all, nil
 	}
 	return all[len(all)-maxLines:], nil
+}
+
+// Search returns entries whose msg contains term (case-insensitive),
+// each with its line number in the shard file.
+func (s *Store) Search(shard, term string) ([]Match, error) {
+	all, err := s.readMatches(shard)
+	if err != nil {
+		return nil, err
+	}
+	needle := strings.ToLower(term)
+	var matches []Match
+	for _, m := range all {
+		if strings.Contains(strings.ToLower(m.Entry.Msg), needle) {
+			matches = append(matches, m)
+		}
+	}
+	return matches, nil
 }
 
 // Delete removes the entry at the given 1-based line index from the shard.
