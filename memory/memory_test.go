@@ -142,3 +142,38 @@ func TestClearNonexistent(t *testing.T) {
 		t.Fatalf("clear nonexistent should not error: %v", err)
 	}
 }
+
+func TestShardEscapeRejected(t *testing.T) {
+	s := testStore(t)
+	for _, shard := range []string{"../escape", "../../etc/cron", "a/../../escape"} {
+		if err := s.Append(shard, Entry{Msg: "x"}); err == nil {
+			t.Fatalf("Append(%q) should be rejected", shard)
+		}
+		if _, err := s.ReadAll(shard); err == nil {
+			t.Fatalf("ReadAll(%q) should be rejected", shard)
+		}
+		if err := s.Update(shard, 1, "x"); err == nil {
+			t.Fatalf("Update(%q) should be rejected", shard)
+		}
+		if err := s.Delete(shard, 1); err == nil {
+			t.Fatalf("Delete(%q) should be rejected", shard)
+		}
+		if err := s.Clear(shard); err == nil {
+			t.Fatalf("Clear(%q) should be rejected", shard)
+		}
+	}
+}
+
+func TestNestedShardAllowed(t *testing.T) {
+	s := testStore(t)
+	if err := s.Append("tasks/task_123", Entry{Msg: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := s.ReadAll("tasks/task_123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("got %d entries, want 1", len(entries))
+	}
+}
