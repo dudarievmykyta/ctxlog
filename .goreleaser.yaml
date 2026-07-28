@@ -39,7 +39,7 @@ brews:
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: "https://github.com/dudarievmykyta/ctxlog"
-    description: "Lightweight CLI tool for persistent, sharded context logging across AI agent sessions"
+    description: "Lightweight CLI coordination journal for AI agent sessions"
     license: "MIT"
     install: |
       bin.install "ctxlog"

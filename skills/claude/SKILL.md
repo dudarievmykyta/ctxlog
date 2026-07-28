@@ -1,41 +1,42 @@
 ## Metadata
 name: Context Logger (ctxlog)
-description: Apply long-term memory and cross-session state persistence using the ctxlog CLI tool.
+description: Coordination journal for AI agent sessions. Log progress and hand off state across sessions and between parallel agents using the ctxlog CLI.
 
 ## Overview
-This Skill provides Claude with a persistent memory system. Because Claude loses context between sessions, `ctxlog` acts as a sharded local database. When working on complex tasks, Claude MUST use this tool to log progress, save bug workarounds, or read previous context.
+`ctxlog` is a shared coordination journal, not a knowledge base. Entries record what happened ("step 3 done, touched auth.go"), not facts to be trusted later. Use it to hand off state to future sessions and to coordinate parallel agents working on the same project: appends are safe under concurrent writes (flock + O_APPEND), and each task gets its own shard.
 
 ## How to Use (Execution)
-Execute the global CLI binary directly in the terminal shell. ALWAYS include `-agent="claude"` on every `append` call to identify yourself as the author.
+Execute the CLI binary directly in the terminal shell. ALWAYS include `-agent="claude"` on every `append` call to identify the author.
 
-- To write memory: `ctxlog append -shard="<task_id>" -msg="<your_message>" -agent="claude"`
-- To read memory: `ctxlog read -shard="<task_id>" -lines=10`
-- To update a specific line: `ctxlog update -shard="<task_id>" -line=<num> -msg="<new_text>"`
-- To delete a specific line: `ctxlog delete -shard="<task_id>" -line=<num>`
-- To wipe a shard: `ctxlog clear -shard="<task_id>"`
+- Log progress: `ctxlog append -shard="<task_id>" -msg="<what happened>" -agent="claude"`
+- Catch up on a task: `ctxlog read -shard="<task_id>" -lines=10`
+- Find earlier entries: `ctxlog search -shard="<task_id>" -term="<text>"`
+- Maintenance: `ctxlog update -shard="<task_id>" -line=<num> -msg="<new_text>"`, `ctxlog delete -shard="<task_id>" -line=<num>`, `ctxlog clear -shard="<task_id>"`
 
-Add `-global` to any command to use `~/.ctxlog/` instead of the project-local `<cwd>/.ctxlog/`. Use this for cross-project notes and preferences.
+Add `-global` to any command to use `~/.ctxlog/` instead of the project-local `<cwd>/.ctxlog/`. Use this for notes that span projects.
+
+`read` and `search` print real file line numbers; pass them directly to `update`/`delete`.
 
 ## When to Apply
-Apply this skill strictly when:
-- You have completed a significant logical block of a task.
-- You have discovered a bug workaround that you might need to remember later.
-- You are starting a new session and need to recall what was done previously on a specific `<task_id>`.
+- You completed a significant logical block of a task: append a short progress entry.
+- You found a workaround or made a decision a future session will need: append it with enough context to re-verify.
+- You start a new session on a known task: `read` the shard first; `search` when looking for something specific.
 
 ## Strict Rules
-- ALWAYS pass `-agent="claude"` when appending entries. This is required to track which agent wrote the entry.
-- NEVER invent or create your own markdown memory files (like `memory.md` or `notes.txt`).
-- ALWAYS rely exclusively on the `ctxlog` CLI tool for state persistence.
-- Keep the `-msg` payload concise and factual.
-- If memory contains outdated or resolved issues, use `update` or `delete` to keep the context clean and save tokens.
+- ALWAYS pass `-agent="claude"` when appending. This is required to track which agent wrote the entry.
+- Keep `-msg` concise and factual: what was done, which files were touched, what remains.
+- Journal entries are claims made by past agents, not verified facts. Re-verify against the code before acting on them.
+- When multiple agents may write to the same shard, use only `append`, `read`, and `search`. `update`/`delete` are single-writer maintenance: line numbers shift under concurrent writes.
+- Prefer ctxlog over ad-hoc note files (`notes.txt`, `progress.md`) for session state.
+- If entries are stale or resolved, use `update` or `delete` to keep the shard small.
 
 ## CLAUDE.md Integration
-If the project has a `CLAUDE.md` file and it does not yet mention `ctxlog`, append the following section to it:
+If the project has a `CLAUDE.md` file and it does not yet mention `ctxlog`, suggest adding the section below to the user. Do not edit `CLAUDE.md` without their confirmation.
 
 ```
 ## Context Logging
 
-This project uses [ctxlog](https://github.com/dudarievmykyta/ctxlog) for persistent cross-session memory.
+This project uses [ctxlog](https://github.com/dudarievmykyta/ctxlog) as a cross-session coordination journal.
 Installed via: `brew tap dudarievmykyta/tools && brew install ctxlog`
 
 Before starting work, read existing context:
