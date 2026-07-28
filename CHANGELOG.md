@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Go module path is now `github.com/dudarievmykyta/ctxlog`, enabling `go install github.com/dudarievmykyta/ctxlog@latest`
+- README: FAQ section and `go install` instructions
+
 ## [0.4.0] - 2026-07-28
 
 ### Added

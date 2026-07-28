@@ -8,6 +8,24 @@ ctxlog is the write side of agent context: a progress journal that agents append
 
 It is not a memory or knowledge base: entries are claims made by past agents, not verified facts. It is also not a transcript search or indexing tool — ctxlog stores only what agents deliberately append.
 
+## FAQ
+
+### Why not just a markdown file?
+
+For a single agent in a single session, a notes file works fine. ctxlog earns its place when sessions multiply:
+
+- **Concurrent writes are safe.** Parallel agents appending to the same notes file interleave and corrupt each other's lines. ctxlog appends are atomic (`flock` + `O_APPEND`), so a fan-out of subagents can share one journal.
+- **Entries are addressable.** `read` and `search` print real line numbers that `update`/`delete` accept, so stale entries get cleaned up instead of accumulating.
+- **One contract for every agent.** A skill can rely on the same commands and entry format in every project, instead of guessing the layout of someone else's notes file.
+
+### Why JSONL and not a database?
+
+Zero dependencies, readable with plain `cat` and `grep`, and diff-friendly if you choose to commit the journal. File-level locking is all the coordination this workload needs.
+
+### Does it work on Windows?
+
+Not yet — locking uses BSD `flock`, which is macOS/Linux only.
+
 ## Requirements
 
 - Go 1.26+
@@ -18,6 +36,12 @@ It is not a memory or knowledge base: entries are claims made by past agents, no
 ```bash
 brew tap dudarievmykyta/tools
 brew install ctxlog
+```
+
+Or with Go:
+
+```bash
+go install github.com/dudarievmykyta/ctxlog@latest
 ```
 
 ## Build from source

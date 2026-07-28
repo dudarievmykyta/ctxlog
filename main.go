@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"ctxlog/memory"
+	"github.com/dudarievmykyta/ctxlog/memory"
 )
 
 //go:embed skills/claude/SKILL.md
