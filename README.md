@@ -1,4 +1,4 @@
-# ctxlog [![build](https://github.com/dudarievmykyta/ctxlog/actions/workflows/test.yml/badge.svg)](https://github.com/dudarievmykyta/ctxlog/actions/workflows/test.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dudarievmykyta/ctxlog)](https://goreportcard.com/report/github.com/dudarievmykyta/ctxlog) [![Release](https://img.shields.io/github/v/release/dudarievmykyta/ctxlog)](https://github.com/dudarievmykyta/ctxlog/releases/latest)
+# <img src="assets/logo.svg" alt="" width="28">&nbsp;ctxlog [![build](https://github.com/dudarievmykyta/ctxlog/actions/workflows/test.yml/badge.svg)](https://github.com/dudarievmykyta/ctxlog/actions/workflows/test.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dudarievmykyta/ctxlog)](https://goreportcard.com/report/github.com/dudarievmykyta/ctxlog) [![Release](https://img.shields.io/github/v/release/dudarievmykyta/ctxlog)](https://github.com/dudarievmykyta/ctxlog/releases/latest)
 
 Lightweight CLI coordination journal for AI agent sessions. Per-shard JSONL files with BSD `flock` for safe concurrent writes. Zero external dependencies — only Go standard library.
 
