@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - README: demo GIF (parallel appends, cross-session catch-up, search)
+- README: build, Go Report Card, and release badges; Features and License sections
+
+### Changed
+
+- README restructured: Features and demo up top, then Install/Usage/reference sections, FAQ moved below Concurrency
 
 ## [0.4.1] - 2026-07-28
 
