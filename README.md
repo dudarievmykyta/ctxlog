@@ -2,6 +2,8 @@
 
 Lightweight CLI coordination journal for AI agent sessions. Per-shard JSONL files with BSD `flock` for safe concurrent writes. Zero external dependencies — only Go standard library.
 
+![ctxlog demo: parallel appends from multiple agents, then catching up in a new session](assets/demo.gif)
+
 ## What it is (and is not)
 
 ctxlog is the write side of agent context: a progress journal that agents append to as they work — "step 3 done, touched auth.go" — and read back when a new session or a parallel agent picks up the task. Appends are atomic under concurrency (`flock` + `O_APPEND`), so N subagents can safely share one journal during fan-out.
