@@ -1,6 +1,17 @@
-# ctxlog
+# ctxlog [![build](https://github.com/dudarievmykyta/ctxlog/actions/workflows/test.yml/badge.svg)](https://github.com/dudarievmykyta/ctxlog/actions/workflows/test.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/dudarievmykyta/ctxlog)](https://goreportcard.com/report/github.com/dudarievmykyta/ctxlog) [![Release](https://img.shields.io/github/v/release/dudarievmykyta/ctxlog)](https://github.com/dudarievmykyta/ctxlog/releases/latest)
 
 Lightweight CLI coordination journal for AI agent sessions. Per-shard JSONL files with BSD `flock` for safe concurrent writes. Zero external dependencies — only Go standard library.
+
+![ctxlog demo: parallel appends from multiple agents, then catching up in a new session](assets/demo.gif)
+
+## Features
+
+- One JSONL journal per task ("shard"), stored in `.ctxlog/` next to your code
+- Safe parallel appends: BSD `flock` + `O_APPEND`, so fan-out subagents can share one journal
+- `read` and `search` print real file line numbers, accepted directly by `update`/`delete`
+- `-global` flag switches to `~/.ctxlog/` for notes that span projects
+- Ships an agent skill: `ctxlog install -type=claude`
+- Single static binary, Go standard library only
 
 ## What it is (and is not)
 
@@ -8,43 +19,27 @@ ctxlog is the write side of agent context: a progress journal that agents append
 
 It is not a memory or knowledge base: entries are claims made by past agents, not verified facts. It is also not a transcript search or indexing tool — ctxlog stores only what agents deliberately append.
 
-## FAQ
-
-### Why not just a markdown file?
-
-For a single agent in a single session, a notes file works fine. ctxlog earns its place when sessions multiply:
-
-- **Concurrent writes are safe.** Parallel agents appending to the same notes file interleave and corrupt each other's lines. ctxlog appends are atomic (`flock` + `O_APPEND`), so a fan-out of subagents can share one journal.
-- **Entries are addressable.** `read` and `search` print real line numbers that `update`/`delete` accept, so stale entries get cleaned up instead of accumulating.
-- **One contract for every agent.** A skill can rely on the same commands and entry format in every project, instead of guessing the layout of someone else's notes file.
-
-### Why JSONL and not a database?
-
-Zero dependencies, readable with plain `cat` and `grep`, and diff-friendly if you choose to commit the journal. File-level locking is all the coordination this workload needs.
-
-### Does it work on Windows?
-
-Not yet — locking uses BSD `flock`, which is macOS/Linux only.
-
 ## Requirements
 
-- Go 1.26+
 - macOS or Linux (uses BSD `flock` for cross-process file locking)
+- Go 1.26+ (only to build from source)
 
 ## Install
+
+### Homebrew
 
 ```bash
 brew tap dudarievmykyta/tools
 brew install ctxlog
 ```
 
-Or with Go:
+### Go
 
 ```bash
 go install github.com/dudarievmykyta/ctxlog@latest
 ```
 
-## Build from source
+### From source
 
 ```bash
 go build -o ctxlog .
@@ -122,22 +117,6 @@ Installs the skill file for the specified agent. Checks that the agent's config 
 
 Supported agents: `claude`. More coming soon.
 
-## File structure on disk
-
-```
-<cwd>/
-└── .ctxlog/
-    ├── auth.jsonl
-    └── tasks/
-        └── task_123.jsonl
-```
-
-Each `.jsonl` file contains one JSON object per line:
-
-```json
-{"ts":1773685005,"agent":"claude","msg":"Fixed DB connection pooling bug"}
-```
-
 ## Flags reference
 
 | Command | Flag | Required | Default | Description |
@@ -159,6 +138,22 @@ Each `.jsonl` file contains one JSON object per line:
 
 All data commands (`append`, `read`, `search`, `update`, `delete`, `clear`) accept `-global` to use `~/.ctxlog/` instead of `<cwd>/.ctxlog/`.
 
+## File structure on disk
+
+```
+<cwd>/
+└── .ctxlog/
+    ├── auth.jsonl
+    └── tasks/
+        └── task_123.jsonl
+```
+
+Each `.jsonl` file contains one JSON object per line:
+
+```json
+{"ts":1773685005,"agent":"claude","msg":"Fixed DB connection pooling bug"}
+```
+
 ## Concurrency
 
 Safe for concurrent use across multiple processes:
@@ -167,6 +162,24 @@ Safe for concurrent use across multiple processes:
 - `O_APPEND` mode for kernel-level write atomicity
 
 `update` and `delete` address entries by line number, which shifts when another process deletes a line. Treat them as single-writer maintenance operations; in fan-out (multiple concurrent writers) stick to `append`, `read`, and `search`.
+
+## FAQ
+
+### Why not just a markdown file?
+
+For a single agent in a single session, a notes file works fine. ctxlog earns its place when sessions multiply:
+
+- **Concurrent writes are safe.** Parallel agents appending to the same notes file interleave and corrupt each other's lines. ctxlog appends are atomic (`flock` + `O_APPEND`), so a fan-out of subagents can share one journal.
+- **Entries are addressable.** `read` and `search` print real line numbers that `update`/`delete` accept, so stale entries get cleaned up instead of accumulating.
+- **One contract for every agent.** A skill can rely on the same commands and entry format in every project, instead of guessing the layout of someone else's notes file.
+
+### Why JSONL and not a database?
+
+Zero dependencies, readable with plain `cat` and `grep`, and diff-friendly if you choose to commit the journal. File-level locking is all the coordination this workload needs.
+
+### Does it work on Windows?
+
+Not yet — locking uses BSD `flock`, which is macOS/Linux only.
 
 ## Project structure
 
@@ -180,3 +193,7 @@ Safe for concurrent use across multiple processes:
 ├── CHANGELOG.md          # Curated, per-release; release notes are also auto-generated by goreleaser
 └── README.md
 ```
+
+## License
+
+[MIT](LICENSE)
