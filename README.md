@@ -29,8 +29,7 @@ It is not a memory or knowledge base: entries are claims made by past agents, no
 ### Homebrew
 
 ```bash
-brew tap dudarievmykyta/tools
-brew install ctxlog
+brew install dudarievmykyta/tools/ctxlog
 ```
 
 ### Go
