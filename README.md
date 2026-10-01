@@ -116,6 +116,12 @@ Installs the skill file for the specified agent. Checks that the agent's config 
 
 Supported agents: `claude`. More coming soon.
 
+### Version
+
+```bash
+ctxlog version
+```
+
 ## Flags reference
 
 | Command | Flag | Required | Default | Description |
