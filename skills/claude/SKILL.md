@@ -1,6 +1,7 @@
-## Metadata
-name: Context Logger (ctxlog)
+---
+name: ctxlog
 description: Coordination journal for AI agent sessions. Log progress and hand off state across sessions and between parallel agents using the ctxlog CLI.
+---
 
 ## Overview
 `ctxlog` is a shared coordination journal, not a knowledge base. Entries record what happened ("step 3 done, touched auth.go"), not facts to be trusted later. Use it to hand off state to future sessions and to coordinate parallel agents working on the same project: appends are safe under concurrent writes (flock + O_APPEND), and each task gets its own shard.
