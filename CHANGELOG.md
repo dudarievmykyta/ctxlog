@@ -7,15 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-01
+
 ### Added
 
-- `ctxlog version` (also `--version`): prints the release version, or the module version when installed via `go install`
+- `ctxlog version` (also `--version`): prints the release version, or the module version when installed via `go install` ([#15])
 
 ### Fixed
 
-- Entries larger than 64 KB no longer make a shard unreadable; `read`, `search`, `update` and `delete` have no per-line size limit
-- Installed Claude skill now has valid YAML frontmatter, so Claude Code reads its name and description instead of showing `Metadata`
-- `append`, `update`, `delete` and `clear` confirmations show `~/.ctxlog/...` instead of `.ctxlog/...` when `-global` is used
+- Entries larger than 64 KB no longer make a shard unreadable; `read`, `search`, `update` and `delete` have no per-line size limit ([#11])
+- Installed Claude skill now has valid YAML frontmatter, so Claude Code reads its name and description instead of showing `Metadata` ([#12])
+- `append`, `update`, `delete` and `clear` confirmations show `~/.ctxlog/...` instead of `.ctxlog/...` when `-global` is used ([#14])
 
 ## [0.4.1] - 2026-07-28
 
@@ -102,7 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release: `append` and `read` over per-shard JSONL files with BSD `flock`, `install` command, release pipeline
 
-[Unreleased]: https://github.com/dudarievmykyta/ctxlog/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/dudarievmykyta/ctxlog/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/dudarievmykyta/ctxlog/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/dudarievmykyta/ctxlog/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/dudarievmykyta/ctxlog/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/dudarievmykyta/ctxlog/compare/v0.3.1...v0.3.2
@@ -120,3 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#4]: https://github.com/dudarievmykyta/ctxlog/pull/4
 [#5]: https://github.com/dudarievmykyta/ctxlog/pull/5
 [#7]: https://github.com/dudarievmykyta/ctxlog/pull/7
+[#11]: https://github.com/dudarievmykyta/ctxlog/pull/11
+[#12]: https://github.com/dudarievmykyta/ctxlog/pull/12
+[#14]: https://github.com/dudarievmykyta/ctxlog/pull/14
+[#15]: https://github.com/dudarievmykyta/ctxlog/pull/15
