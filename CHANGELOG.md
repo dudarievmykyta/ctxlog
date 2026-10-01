@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Entries larger than 64 KB no longer make a shard unreadable; `read`, `search`, `update` and `delete` have no per-line size limit
+
 ## [0.4.1] - 2026-07-28
 
 ### Changed
