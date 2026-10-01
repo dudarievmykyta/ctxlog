@@ -3,6 +3,7 @@ package memory
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -229,5 +230,26 @@ func TestNestedShardAllowed(t *testing.T) {
 	}
 	if len(entries) != 1 {
 		t.Fatalf("got %d entries, want 1", len(entries))
+	}
+}
+
+func TestLongEntry(t *testing.T) {
+	s := testStore(t)
+	long := strings.Repeat("a", 200*1024)
+	s.Append("s1", Entry{Msg: long})
+	s.Append("s1", Entry{Msg: "after"})
+
+	got, err := s.ReadRecent("s1", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].Entry.Msg != long || got[1].Line != 2 {
+		t.Fatalf("long entry not read back intact: %d matches", len(got))
+	}
+	if err := s.Update("s1", 1, "short"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete("s1", 2); err != nil {
+		t.Fatal(err)
 	}
 }

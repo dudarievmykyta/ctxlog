@@ -4,8 +4,10 @@ package memory
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,23 +112,17 @@ func (s *Store) readMatches(shard string) ([]Match, error) {
 	}
 	defer syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
 
+	lines, err := scanLines(f)
+	if err != nil {
+		return nil, err
+	}
 	var matches []Match
-	line := 0
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		b := scanner.Bytes()
-		if len(b) == 0 {
-			continue
-		}
-		line++
+	for i, b := range lines {
 		var e Entry
 		if err := json.Unmarshal(b, &e); err != nil {
 			continue
 		}
-		matches = append(matches, Match{Line: line, Entry: e})
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("scan: %w", err)
+		matches = append(matches, Match{Line: i + 1, Entry: e})
 	}
 	return matches, nil
 }
@@ -267,21 +263,26 @@ func readLines(f *os.File) ([][]byte, error) {
 	if _, err := f.Seek(0, 0); err != nil {
 		return nil, fmt.Errorf("seek: %w", err)
 	}
+	return scanLines(f)
+}
+
+// scanLines returns all non-empty lines. Unlike bufio.Scanner it has no
+// per-line size limit, so one long entry cannot make a shard unreadable.
+func scanLines(r io.Reader) ([][]byte, error) {
 	var lines [][]byte
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		if len(line) == 0 {
-			continue
+	br := bufio.NewReader(r)
+	for {
+		b, err := br.ReadBytes('\n')
+		if b = bytes.TrimRight(b, "\r\n"); len(b) > 0 {
+			lines = append(lines, b)
 		}
-		cp := make([]byte, len(line))
-		copy(cp, line)
-		lines = append(lines, cp)
+		if err == io.EOF {
+			return lines, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("scan: %w", err)
+		}
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("scan: %w", err)
-	}
-	return lines, nil
 }
 
 func truncateAndWrite(f *os.File, lines [][]byte) error {
