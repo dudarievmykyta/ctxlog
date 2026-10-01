@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ctxlog version` (also `--version`): prints the release version, or the module version when installed via `go install`
+
 ### Fixed
 
 - Entries larger than 64 KB no longer make a shard unreadable; `read`, `search`, `update` and `delete` have no per-line size limit

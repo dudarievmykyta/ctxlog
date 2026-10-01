@@ -11,12 +11,26 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/dudarievmykyta/ctxlog/memory"
 )
 
 //go:embed skills/claude/SKILL.md
 var claudeSkill []byte
+
+// version is set at release time via -ldflags "-X main.version=...".
+var version = ""
+
+func buildVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
 
 func printUsage() {
 	fmt.Fprintf(os.Stderr, `ctxlog — persistent, sharded context logging for AI agent sessions
@@ -32,6 +46,7 @@ Commands:
   delete    Delete an entry by line number
   clear     Remove an entire shard file
   install   Install agent skill (-type=claude)
+  version   Print the ctxlog version
 
 Global flags:
   -global    Use ~/.ctxlog/ instead of <cwd>/.ctxlog/
@@ -68,6 +83,8 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "version", "--version", "-version":
+		fmt.Println("ctxlog " + buildVersion())
 	case "append":
 		cmdAppend(os.Args[2:])
 	case "read":
