@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Entries larger than 64 KB no longer make a shard unreadable; `read`, `search`, `update` and `delete` have no per-line size limit
+- Installed Claude skill now has valid YAML frontmatter, so Claude Code reads its name and description instead of showing `Metadata`
 
 ## [0.4.1] - 2026-07-28
 
