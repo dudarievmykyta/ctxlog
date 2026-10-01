@@ -99,7 +99,7 @@ func cmdAppend(args []string) {
 		fatalf("append: %v", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "ok: appended to .ctxlog/%s.jsonl\n", shard)
+	fmt.Fprintf(os.Stderr, "ok: appended to %s\n", shardLabel(shard, global))
 }
 
 func cmdRead(args []string) {
@@ -162,7 +162,7 @@ func cmdUpdate(args []string) {
 		fatalf("update: %v", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "ok: updated line %d in .ctxlog/%s.jsonl\n", line, shard)
+	fmt.Fprintf(os.Stderr, "ok: updated line %d in %s\n", line, shardLabel(shard, global))
 }
 
 func cmdDelete(args []string) {
@@ -173,7 +173,7 @@ func cmdDelete(args []string) {
 		fatalf("delete: %v", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "ok: deleted line %d from .ctxlog/%s.jsonl\n", line, shard)
+	fmt.Fprintf(os.Stderr, "ok: deleted line %d from %s\n", line, shardLabel(shard, global))
 }
 
 func cmdClear(args []string) {
@@ -184,7 +184,7 @@ func cmdClear(args []string) {
 		fatalf("clear: %v", err)
 	}
 
-	fmt.Fprintf(os.Stderr, "ok: cleared .ctxlog/%s.jsonl\n", shard)
+	fmt.Fprintf(os.Stderr, "ok: cleared %s\n", shardLabel(shard, global))
 }
 
 var agents = map[string]struct {
@@ -259,6 +259,14 @@ func parseFlags(cmd string, args []string, needShard, needMsg, needLine, needAge
 		fatalf("%s: -line is required (must be >= 1)", cmd)
 	}
 	return *shardP, *msgP, *lineP, *agentP, *globalP
+}
+
+// shardLabel is the shard file path as shown in confirmation messages.
+func shardLabel(shard string, global bool) string {
+	if global {
+		return "~/.ctxlog/" + shard + ".jsonl"
+	}
+	return ".ctxlog/" + shard + ".jsonl"
 }
 
 func getStore(global bool) *memory.Store {
