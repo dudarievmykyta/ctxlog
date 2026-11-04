@@ -125,9 +125,13 @@ func cmdRead(args []string) {
 	lines := fs.Int("lines", 10, "number of recent lines to return")
 	global := fs.Bool("global", false, "use ~/.ctxlog/")
 	fs.Parse(args)
+	rejectExtraArgs("read", fs)
 
 	if *shard == "" {
 		fatalf("read: -shard is required")
+	}
+	if *lines < 1 {
+		fatalf("read: -lines must be >= 1")
 	}
 
 	store := getStore(*global)
@@ -146,6 +150,7 @@ func cmdSearch(args []string) {
 	term := fs.String("term", "", "text to search for (required)")
 	global := fs.Bool("global", false, "use ~/.ctxlog/")
 	fs.Parse(args)
+	rejectExtraArgs("search", fs)
 
 	if *shard == "" {
 		fatalf("search: -shard is required")
@@ -220,6 +225,7 @@ func cmdInstall(args []string) {
 	fs := flag.NewFlagSet("install", flag.ExitOnError)
 	agentType := fs.String("type", "", "agent type to install skill for (e.g. claude)")
 	fs.Parse(args)
+	rejectExtraArgs("install", fs)
 
 	if *agentType == "" {
 		supported := make([]string, 0, len(agents))
@@ -265,6 +271,7 @@ func parseFlags(cmd string, args []string, needShard, needMsg, needLine, needAge
 	agentP := fs.String("agent", "", "")
 	globalP := fs.Bool("global", false, "")
 	fs.Parse(args)
+	rejectExtraArgs(cmd, fs)
 
 	if needShard && *shardP == "" {
 		fatalf("%s: -shard is required", cmd)
@@ -276,6 +283,14 @@ func parseFlags(cmd string, args []string, needShard, needMsg, needLine, needAge
 		fatalf("%s: -line is required (must be >= 1)", cmd)
 	}
 	return *shardP, *msgP, *lineP, *agentP, *globalP
+}
+
+// rejectExtraArgs fails on leftover positional arguments. They usually mean an
+// unquoted value, e.g. -msg=hello world, where "world" would be silently dropped.
+func rejectExtraArgs(cmd string, fs *flag.FlagSet) {
+	if fs.NArg() > 0 {
+		fatalf("%s: unexpected argument %q (quote values that contain spaces)", cmd, fs.Arg(0))
+	}
 }
 
 // shardLabel is the shard file path as shown in confirmation messages.
@@ -301,11 +316,9 @@ func getStore(global bool) *memory.Store {
 		}
 		base = cwd
 	}
-	store := memory.NewStore(base)
-	if err := store.Init(); err != nil {
-		fatalf("init: %v", err)
-	}
-	return store
+	// No Init here: Append creates the directory on first write, so read-only
+	// commands do not leave an empty .ctxlog/ behind.
+	return memory.NewStore(base)
 }
 
 func fatalf(format string, args ...any) {
