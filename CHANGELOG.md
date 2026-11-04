@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `read -lines` below 1 exits with an error instead of panicking ([#17])
 - Stray positional arguments are rejected: an unquoted `-msg=hello world` used to store only `hello` and report `ok` ([#17])
 - `read` and `search` no longer create an empty `.ctxlog/` in the current directory ([#17])
+- `append` starts a new line when the shard does not end with one, instead of merging two entries into one unreadable line ([#18])
 
 ## [0.4.2] - 2026-10-01
 
@@ -134,3 +135,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#14]: https://github.com/dudarievmykyta/ctxlog/pull/14
 [#15]: https://github.com/dudarievmykyta/ctxlog/pull/15
 [#17]: https://github.com/dudarievmykyta/ctxlog/pull/17
+[#18]: https://github.com/dudarievmykyta/ctxlog/pull/18
