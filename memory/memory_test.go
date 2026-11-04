@@ -253,3 +253,22 @@ func TestLongEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAppendAfterUnterminatedLine(t *testing.T) {
+	s := testStore(t)
+	path := filepath.Join(s.basePath, "s1.jsonl")
+	if err := os.WriteFile(path, []byte(`{"ts":1,"agent":"a","msg":"one"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Append("s1", Entry{Msg: "two"}); err != nil {
+		t.Fatal(err)
+	}
+
+	entries, err := s.ReadAll("s1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 || entries[0].Msg != "one" || entries[1].Msg != "two" {
+		t.Fatalf("got %+v, want entries one and two", entries)
+	}
+}
