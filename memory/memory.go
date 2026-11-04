@@ -60,7 +60,7 @@ func (s *Store) Append(shard string, e Entry) error {
 		return fmt.Errorf("mkdir shard dir: %w", err)
 	}
 
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		return fmt.Errorf("open shard: %w", err)
 	}
@@ -76,6 +76,16 @@ func (s *Store) Append(shard string, e Entry) error {
 		return fmt.Errorf("marshal: %w", err)
 	}
 	data = append(data, '\n')
+
+	// If the file does not end with a newline (hand edit, interrupted write),
+	// start on a new line so the entry is not glued onto the last one.
+	unterminated, err := lacksTrailingNewline(f)
+	if err != nil {
+		return err
+	}
+	if unterminated {
+		data = append([]byte{'\n'}, data...)
+	}
 
 	if _, err := f.Write(data); err != nil {
 		return fmt.Errorf("write: %w", err)
@@ -257,6 +267,21 @@ func (s *Store) Clear(shard string) error {
 		return fmt.Errorf("remove shard: %w", err)
 	}
 	return nil
+}
+
+func lacksTrailingNewline(f *os.File) (bool, error) {
+	fi, err := f.Stat()
+	if err != nil {
+		return false, fmt.Errorf("stat: %w", err)
+	}
+	if fi.Size() == 0 {
+		return false, nil
+	}
+	last := make([]byte, 1)
+	if _, err := f.ReadAt(last, fi.Size()-1); err != nil {
+		return false, fmt.Errorf("read last byte: %w", err)
+	}
+	return last[0] != '\n', nil
 }
 
 func readLines(f *os.File) ([][]byte, error) {
